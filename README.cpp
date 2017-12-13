@@ -170,7 +170,6 @@ long long move_time_ahead() {
     else {
         next_submit = -1;
     }
-
     if(Current_tasks.empty() && Waiting_tasks.empty()) {
         min = next_submit;
         if(!Start_time_queue.empty()) {
