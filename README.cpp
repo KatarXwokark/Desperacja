@@ -319,7 +319,7 @@ double calculate_error(double avg_flow_time, double best_flow_time) {
     return ( (avg_flow_time - best_flow_time) / best_flow_time) * 100.00;
 }
 
-vector <vector <Task>> Swap_tasks(){
+vector <vector <Task>> Swap_tasks(){ // to cała misterna machineria przezucania zadan na koniec i prawidłowego sciągania zadan powyżej dawnego miejsca zadania przezuconego
 	int l = 0;
 	vector <vector <Task>> temp = F_matrix;
 	long long int i = rand() % Finished_tasks.size(), range = F_matrix[0].size(), counter = 0, j, block;
@@ -407,7 +407,7 @@ vector <vector <Task>> Swap_tasks(){
 	return temp;
 }
 
-vector <vector <Task>> Code(){
+vector <vector <Task>> Code(){ //to miało zmieniać vector Task'ów na vector vector'ów Task'ów, by mieć je zapisane w stylu "ten procesor w tym momencie ma takie zadanie (nie przepisuje samych identyfikatorów by przenosić wszystkie informacje)
 	vector <vector <Task>> temp;
 	temp.resize(Max_procs);
 	cout << "1" << endl;
@@ -435,7 +435,7 @@ vector <vector <Task>> Code(){
 	return temp;
 }
 
-deque <Task> Decode (vector <vector <Task>> code){
+deque <Task> Decode (vector <vector <Task>> code){ //a to dekoduje w drugą stronę
 	cout << "7" << endl;
 	deque <Task> temp;
 	for(int i = 0; i < Max_procs; i++){
@@ -463,7 +463,7 @@ deque <Task> Decode (vector <vector <Task>> code){
 	return temp;
 }
 
-void cos(){
+void cos(){  //tu się zaczyna przeróbka
 	F_matrix = Code();
 	deque <Task> Kopia;
 	vector <vector <Task>> Copy = F_matrix;
