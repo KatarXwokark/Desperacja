@@ -550,7 +550,7 @@ int main(int argv, char * argc []) {
     }
 
 	b_6 = clock();
-	cos();
+	cos();  //prawdopodobnie tak czy siak to wszystko idzie do piachu
     e_6 = clock();
     double duration_swap = e_6 - b_6;
     
