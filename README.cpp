@@ -1,4 +1,4 @@
-#include "Task.h"
+#include "Task.h" // dodalem nową zmienną do klasy flag i struktury, które wyznaczają element z mniejszą flagą i submit_time
 
 
 using namespace std;
