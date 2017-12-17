@@ -354,21 +354,21 @@ vector <Task> set_candidates_other() {
 }
 
 void Refresh_Tasks(){
-	for(int i = 0; i < Finished_tasks.size(); i++){
-		Tasks.push_back(Finished_tasks[i]);
+	for(int i = 0; i < Previous_tasks.size(); i++){
+		Tasks.push_back(Previous_tasks[i]);
 		Tasks[i].proc_nos = {};
 	}
 	sort(Tasks.begin(), Tasks.end(), min_submit_time());
-	int u = 5, i = rand() % Tasks.size(), j = rand() % Tasks.size();
-	while(i == j || Tasks[i].put_time < Tasks[i].submit_time){
-		j = rand() % Tasks.size();
+	int u = 5, i = rand() % Tasks.size(), j = rand() % 200;
+	while(0 == j || i + j >= Tasks.size() || Tasks[i].put_time < Tasks[i + j].submit_time){
+		j = rand() % 200;
 		u--;
 		if(u == 0){
 			i = rand() % Tasks.size();
 			u = 5;
 		}
 	}
-	swap(Tasks[i].flag, Tasks[j].flag);
+	swap(Tasks[i].flag, Tasks[i + j].flag);
 	Finished_tasks = {};
 }
 
@@ -434,7 +434,7 @@ int main(int argv, char * argc []) {
 	double T = Pocz;
 	Previous_tasks = Finished_tasks;
 	Bestest_tasks = Finished_tasks;
-	while(T > 1 || (stop - start) / (double) CLOCKS_PER_SEC < 300){
+	while(T > 1 && (stop - start) / (double) CLOCKS_PER_SEC < 300){
 		Refresh_Tasks();
 		Start_time_queue = {};
 		create_submit_queue();
@@ -482,17 +482,24 @@ int main(int argv, char * argc []) {
 		double Bestest_resault = calculate_avg_flow_time(Bestest_tasks);
 		cout << Previous_resault << " " << Current_resault << " " << Bestest_resault << endl;
 		if(Current_resault <= Previous_resault){
+			cout << "Tak ";
 			Previous_tasks = Finished_tasks;
 			if(Current_resault < Bestest_resault){
+				cout << "Tak" << endl;
 				Bestest_tasks = Finished_tasks;
 			}
+			else cout << "Nie" << endl;
 		}
 		else{
-			double prop = exp((Previous_resault - Current_resault)/T) * 10000;
+			cout << "Nie ";
+			double prop = exp((Previous_resault - Current_resault)/8*T) * 10000; //miejsce na tuning
 			double temp = rand() & 10000;
 			if(prop > temp){
+				T *= 0.9;
+				cout << "Tak" << endl;
 				Previous_tasks = Finished_tasks;
 			}
+			else cout << "Nie" << endl;
 		}
 	    stop = clock();
 	}
