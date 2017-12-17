@@ -4,8 +4,8 @@
 using namespace std;
 
 long long Max_procs, Max_nodes, Max_jobs, Current_time, Total_flow_time = 0;
-long long N, licz = 0;
-int Pocz;
+long long N;
+int licz, Pocz;
 deque <Proc> Procs;
 deque <Proc> Available_procs;
 
@@ -14,8 +14,9 @@ deque <Task> Current_tasks;
 deque <Task> Waiting_tasks;
 deque <Task> Finished_tasks;
 deque <long long> Start_time_queue;
-deque <Task> Best_tasks;
-deque <Task> Previous_tasks;
+deque <Task> Previous_tasks; 
+deque <Task> Bestest_tasks;
+
 
 
 vector <Task> get_dataset(string file_string, int flag) {
@@ -275,7 +276,7 @@ vector <Task> spt () {
     while(at >= Waiting_tasks[task_i].submit_time && available_procs > 0 && task_i < Waiting_tasks.size()) {
         if(available_procs - Waiting_tasks[task_i].proc_count >= 0) {
         	Waiting_tasks[task_i].flag = licz;
-        	licz++;
+			licz++; 
             local_candidates.push_back(Waiting_tasks[task_i]);
             available_procs -= Waiting_tasks[task_i].proc_count;
         }
@@ -296,23 +297,22 @@ vector <Task> set_candidates() {
         local_candidates.push_back(Waiting_tasks[0]);
         return local_candidates;
     }
-    else local_candidates = spt();
+    else	local_candidates = spt();
     return local_candidates;
-
 }
 
-double calculate_avg_flow_time (deque <Task> counted) {
-	long long flow_time = 0;
-    for(int i = 0; i < counted.size() ; i++) {
-        flow_time += counted[i].end_time;
+double calculate_avg_flow_time (deque <Task> count) {
+	long long flow_time;
+    for(int i = 0; i < count.size() ; i++) {
+        flow_time += count[i].end_time;
     }
     return (flow_time);
 };
 
 double calculate_opt_flow_time () {
     long long opt_flow = 0;
-    for(int i = 0; i < Best_tasks.size() ; i++) {
-        opt_flow += (Best_tasks[i].submit_time + Best_tasks[i].run_time);
+    for(int i = 0; i < Finished_tasks.size() ; i++) {
+        opt_flow += (Finished_tasks[i].submit_time + Finished_tasks[i].run_time);
     }
     return (opt_flow);
 };
@@ -321,33 +321,7 @@ double calculate_error(double avg_flow_time, double best_flow_time) {
     return ( (avg_flow_time - best_flow_time) / best_flow_time) * 100.00;
 }
 
-//nowe funkcyjki
-
-void New_tasks() {
-	for(int i = 0; i < Finished_tasks.size(); i++){
-		Tasks.push_back(Finished_tasks[i]);
-	}
-}
-
-void rand_swap() {
-	int u = 5;
-	long long i = rand() % Tasks.size(), j = rand() % Tasks.size();
-	while(Tasks[i].put_time < Tasks[j].submit_time || i == j){	
-		j = rand() % Tasks.size();
-		u--;
-		if(u == 0){
-			i = rand() % Tasks.size();
-			u = 5;
-		}
-	}
-	swap(Tasks[i].flag, Tasks[j].flag);
-}
-
-void Clean() {
-	for(int i = 0; i < Tasks.size(); i++){
-		Tasks[i].proc_nos = {};
-	}
-}
+//moje funkcyjki
 
 vector <Task> fifo () {
     int available_procs = Available_procs.size();
@@ -370,13 +344,34 @@ vector <Task> set_candidates_other() {
     vector <Task> local_candidates;
     if(Waiting_tasks.empty()) return local_candidates;
     if(Waiting_tasks.size() == 1 && Waiting_tasks[0].proc_count <= available_procs) {
+    	Waiting_tasks[0].flag = licz;
+    	licz++;
         local_candidates.push_back(Waiting_tasks[0]);
         return local_candidates;
     }
-    else local_candidates = fifo();
+    else	local_candidates = fifo();
     return local_candidates;
-
 }
+
+void Refresh_Tasks(){
+	for(int i = 0; i < Finished_tasks.size(); i++){
+		Tasks.push_back(Finished_tasks[i]);
+		Tasks[i].proc_nos = {};
+	}
+	sort(Tasks.begin(), Tasks.end(), min_submit_time());
+	int u = 5, i = rand() % Tasks.size(), j = rand() % Tasks.size();
+	while(i == j || Tasks[i].put_time < Tasks[i].submit_time){
+		j = rand() % Tasks.size();
+		u--;
+		if(u == 0){
+			i = rand() % Tasks.size();
+			u = 5;
+		}
+	}
+	swap(Tasks[i].flag, Tasks[j].flag);
+	Finished_tasks = {};
+}
+
 
 
 int main(int argv, char * argc []) {
@@ -398,7 +393,7 @@ int main(int argv, char * argc []) {
     double duration_set_candidates = 0;
     double duration_pt_tasks = 0;
     double duration_move = 0;
-    while((!Tasks.empty() || !Waiting_tasks.empty() || !Current_tasks.empty()) && Current_time >= 0) { // tu jest tworzone rozwiązanie z SPT
+    while((!Tasks.empty() || !Waiting_tasks.empty() || !Current_tasks.empty()) && Current_time >= 0) {
 
         b = clock();
         remove_tasks();
@@ -416,7 +411,7 @@ int main(int argv, char * argc []) {
         duration_get_candidates += e_2 - b_2;
 
         b_3 = clock();
-        vector <Task> tasks_to_put = set_candidates();
+        vector <Task> tasks_to_put = set_candidates_other();
         e_3 = clock();
         duration_set_candidates += e_3 - b_3;
 
@@ -434,44 +429,40 @@ int main(int argv, char * argc []) {
         Current_time = move_time_ahead();
         e_5 = clock();
         duration_move += e_5 - b_5;
-        
     }
-    double T = Pocz;
-    Best_tasks = Finished_tasks;
-    Previous_tasks = Finished_tasks;
-    while(T > 1 && (stop - start) / (double) CLOCKS_PER_SEC < 300){ //a tu zaczyna się SA
-    	New_tasks();
-    	sort(Tasks.begin(), Tasks.end(), min_submit_time());
-        Clean();
-    	Finished_tasks = {};
-    	rand_swap();
-    	Current_time = 0;
-    	Start_time_queue = {};
-        create_submit_queue();
-    	while((!Tasks.empty() || !Waiting_tasks.empty() || !Current_tasks.empty()) && Current_time >= 0) {
-			
-    	    b = clock();
+    stop = clock();
+	double T = Pocz;
+	Previous_tasks = Finished_tasks;
+	Bestest_tasks = Finished_tasks;
+	while(T > 1 || (stop - start) / (double) CLOCKS_PER_SEC < 300){
+		Refresh_Tasks();
+		Start_time_queue = {};
+		create_submit_queue();
+		Current_time = 0;
+	    while((!Tasks.empty() || !Waiting_tasks.empty() || !Current_tasks.empty()) && Current_time >= 0) {
+
+        	b = clock();
         	remove_tasks();
         	e = clock();
-        	duration_rm += e - b;
+    	    duration_rm += e - b;
 	
-    	    b_1 = clock();
+        	b_1 = clock();
         	get_processors();
         	e_1 = clock();
-        	duration_get_available += e_1 - b_1;
-
+    	    duration_get_available += e_1 - b_1;
+	
         	b_2 = clock();
         	get_candidates();
         	e_2 = clock();
-        	duration_get_candidates += e_2 - b_2;
+    	    duration_get_candidates += e_2 - b_2;
 	
-    	    b_3 = clock();
+        	b_3 = clock();
         	vector <Task> tasks_to_put = set_candidates_other();
         	e_3 = clock();
-        	duration_set_candidates += e_3 - b_3;
+    	    duration_set_candidates += e_3 - b_3;
 	
-    	    try {
-        	    b_4 = clock();
+        	try {
+            	b_4 = clock();
             	put_candidates(tasks_to_put);
             	e_4 = clock();
             	duration_pt_tasks += e_4 - b_4;
@@ -479,46 +470,41 @@ int main(int argv, char * argc []) {
         	catch (PutError & e) {
             	cout << e.what() << endl;
         	}
-			
-    	    b_5 = clock();
+	
+        	b_5 = clock();
         	Current_time = move_time_ahead();
         	e_5 = clock();
         	duration_move += e_5 - b_5;
-			
-		    //cout << Tasks.empty() << " " << Waiting_tasks.empty() << " " << Current_tasks.empty() << " " << Start_time_queue.empty() << endl;
     	}
-    	double Previous_resault = calculate_avg_flow_time (Previous_tasks);
-		double This_resault = calculate_avg_flow_time (Finished_tasks);
-		double Best_resault = calculate_avg_flow_time (Best_tasks);
-		//cout << Previous_resault << " " << This_resault << " " << Best_resault << endl;
-		if(This_resault < Previous_resault) {
-			//cout << "TAK" << endl;
+		stop = clock();
+		double Previous_resault = calculate_avg_flow_time(Previous_tasks);
+		double Current_resault = calculate_avg_flow_time(Finished_tasks);
+		double Bestest_resault = calculate_avg_flow_time(Bestest_tasks);
+		cout << Previous_resault << " " << Current_resault << " " << Bestest_resault << endl;
+		if(Current_resault <= Previous_resault){
 			Previous_tasks = Finished_tasks;
-			if(This_resault < Best_resault) Best_tasks = Finished_tasks;
+			if(Current_resault < Bestest_resault){
+				Bestest_tasks = Finished_tasks;
+			}
 		}
-		else if(This_resault > Previous_resault){
-			//cout << "NIE";
-			double prop = exp((Previous_resault - This_resault)/1000000000*T) * 10000;
-			double decider = rand() % 10000;
-			if(prop > decider){
-				T *= 0.9;
-				//cout << " TAK" << endl;				
+		else{
+			double prop = exp((Previous_resault - Current_resault)/T) * 10000;
+			double temp = rand() & 10000;
+			if(prop > temp){
 				Previous_tasks = Finished_tasks;
 			}
-			else //cout << " NIE" << endl;
 		}
-		stop = clock();
+	    stop = clock();
 	}
-    stop = clock();
     
 
     //printing finished tasks in console
     if(stoi(argc[4]) == 0) {
-        //print_tasks(Best_tasks);
-        double avg_flow_time = calculate_avg_flow_time(Best_tasks);
+        //print_tasks(Finished_tasks);
+        double avg_flow_time = calculate_avg_flow_time(Bestest_tasks);
     	double best_avg_flow_time = calculate_opt_flow_time();
     	double error_perc = calculate_error(avg_flow_time, best_avg_flow_time);
-    	if (tasks_size_at_entrance == Best_tasks.size() && Max_jobs > 0) {
+    	if (tasks_size_at_entrance == Finished_tasks.size() && Max_jobs > 0) {
 	        cout << "------------------------------------------------------\n";
 	        cout << "Calculated best flow: " << best_avg_flow_time << endl;
 	        cout << "Average flow: " << avg_flow_time << endl;
@@ -533,9 +519,9 @@ int main(int argv, char * argc []) {
     	}
     }
 
-    if (tasks_size_at_entrance == Best_tasks.size() && Max_jobs > 0) {
+    if (tasks_size_at_entrance == Bestest_tasks.size() && Max_jobs > 0) {
     	cout << "Program finished successfully. Check output.txt for results" << endl;
-    	export_to_file(Best_tasks);
+    	export_to_file(Bestest_tasks);
     }
 
     return 0;
