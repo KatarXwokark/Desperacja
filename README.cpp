@@ -9,7 +9,7 @@ int Pocz;
 deque <Proc> Procs;
 deque <Proc> Available_procs;
 
-deque <Task> Tasks;
+vector <Task> Tasks;
 deque <Task> Current_tasks;
 deque <Task> Waiting_tasks;
 deque <Task> Finished_tasks;
@@ -18,10 +18,10 @@ deque <Task> Best_tasks;
 deque <Task> Previous_tasks;
 
 
-deque <Task> get_dataset(string file_string, int flag) {
+vector <Task> get_dataset(string file_string, int flag) {
     string a,b,c,d,e;
     string dummy_str;
-    deque <Task> tasks;
+    vector <Task> tasks;
     ifstream input_file;
     input_file.open(file_string);
     if(!input_file) {
@@ -323,6 +323,12 @@ double calculate_error(double avg_flow_time, double best_flow_time) {
 
 //nowe funkcyjki
 
+void New_tasks() {
+	for(int i = 0; i < Finished_tasks.size(); i++){
+		Tasks.push_back(Finished_tasks[i]);
+	}
+}
+
 void rand_swap() {
 	int u = 5;
 	long long i = rand() % Tasks.size(), j = rand() % Tasks.size();
@@ -433,8 +439,8 @@ int main(int argv, char * argc []) {
     double T = Pocz;
     Best_tasks = Finished_tasks;
     Previous_tasks = Finished_tasks;
-    while(T > 1 && (clock() - start) / (double) CLOCKS_PER_SEC < 300){ //a tu zaczyna się SA
-    	Tasks = Previous_tasks;
+    while(T > 1 && (stop - start) / (double) CLOCKS_PER_SEC < 300){ //a tu zaczyna się SA
+    	New_tasks();
     	sort(Tasks.begin(), Tasks.end(), min_submit_time());
         Clean();
     	Finished_tasks = {};
@@ -484,22 +490,22 @@ int main(int argv, char * argc []) {
     	double Previous_resault = calculate_avg_flow_time (Previous_tasks);
 		double This_resault = calculate_avg_flow_time (Finished_tasks);
 		double Best_resault = calculate_avg_flow_time (Best_tasks);
-		cout << Previous_resault << " " << This_resault << " " << Best_resault << endl;
+		//cout << Previous_resault << " " << This_resault << " " << Best_resault << endl;
 		if(This_resault < Previous_resault) {
-			cout << "TAK" << endl;
+			//cout << "TAK" << endl;
 			Previous_tasks = Finished_tasks;
 			if(This_resault < Best_resault) Best_tasks = Finished_tasks;
 		}
 		else if(This_resault > Previous_resault){
-			cout << "NIE";
+			//cout << "NIE";
 			double prop = exp((Previous_resault - This_resault)/1000000000*T) * 10000;
 			double decider = rand() % 10000;
 			if(prop > decider){
 				T *= 0.9;
-				cout << " TAK" << endl;				
+				//cout << " TAK" << endl;				
 				Previous_tasks = Finished_tasks;
 			}
-			else cout << " NIE" << endl;
+			else //cout << " NIE" << endl;
 		}
 		stop = clock();
 	}
