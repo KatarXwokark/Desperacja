@@ -411,7 +411,7 @@ int main(int argv, char * argc []) {
         duration_get_candidates += e_2 - b_2;
 
         b_3 = clock();
-        vector <Task> tasks_to_put = set_candidates_other();
+        vector <Task> tasks_to_put = set_candidates();
         e_3 = clock();
         duration_set_candidates += e_3 - b_3;
 
