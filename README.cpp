@@ -302,7 +302,7 @@ vector <Task> set_candidates() {
 }
 
 double calculate_avg_flow_time (deque <Task> count) {
-	long long flow_time;
+	long long flow_time = 0;
     for(int i = 0; i < count.size() ; i++) {
         flow_time += count[i].end_time;
     }
