@@ -5,7 +5,7 @@ using namespace std;
 
 long long Max_procs, Max_nodes, Max_jobs, Current_time, Total_flow_time = 0;
 long long N;
-int licz, Pocz;
+int licz, kon;
 deque <Proc> Procs;
 deque <Proc> Available_procs;
 
@@ -359,9 +359,9 @@ void Refresh_Tasks(){
 		Tasks[i].proc_nos = {};
 	}
 	sort(Tasks.begin(), Tasks.end(), min_submit_time());
-	int u = 5, i = rand() % Tasks.size(), j = rand() % 200;
+	int u = 5, i = rand() % Tasks.size(), j = rand() % (Tasks.size() / 5);
 	while(0 == j || i + j >= Tasks.size() || Tasks[i].put_time < Tasks[i + j].submit_time){
-		j = rand() % 200;
+		j = rand() % (Tasks.size() / 5);
 		u--;
 		if(u == 0){
 			i = rand() % Tasks.size();
@@ -379,13 +379,13 @@ int main(int argv, char * argc []) {
 
     string file_string = argc[1];
     N = stoi(argc[2]);
-    Pocz = stoi(argc[3]);
+    kon = stoi(argc[3]);
     Tasks = get_dataset(file_string, stoi(argc[4]));
     Procs = create_processors();
     create_submit_queue();
     unsigned long tasks_size_at_entrance = Tasks.size();
 
-    clock_t start, stop, b, e, b_1, e_1, b_2, e_2, b_3, e_3, b_4, e_4, b_5, e_5;
+    clock_t start, stop, b, e, b_1, e_1, b_2, e_2, b_3, e_3, b_4, e_4, b_5, e_5, b_6, e_6;
     start = clock();
     double duration_rm = 0;
     double duration_get_available = 0;
@@ -393,6 +393,7 @@ int main(int argv, char * argc []) {
     double duration_set_candidates = 0;
     double duration_pt_tasks = 0;
     double duration_move = 0;
+    double duration_refresh = 0;
     while((!Tasks.empty() || !Waiting_tasks.empty() || !Current_tasks.empty()) && Current_time >= 0) {
 
         b = clock();
@@ -431,14 +432,17 @@ int main(int argv, char * argc []) {
         duration_move += e_5 - b_5;
     }
     stop = clock();
-	double T = Pocz;
+	double T = 20;
 	Previous_tasks = Finished_tasks;
 	Bestest_tasks = Finished_tasks;
-	while(T > 1 && (stop - start) / (double) CLOCKS_PER_SEC < 300){
+	while((stop - start) / (double) CLOCKS_PER_SEC < kon){
+		b_6 = clock();
 		Refresh_Tasks();
 		Start_time_queue = {};
 		create_submit_queue();
 		Current_time = 0;
+		e_6 = clock();
+		duration_refresh += e_6 - b_6;
 	    while((!Tasks.empty() || !Waiting_tasks.empty() || !Current_tasks.empty()) && Current_time >= 0) {
 
         	b = clock();
@@ -480,26 +484,26 @@ int main(int argv, char * argc []) {
 		double Previous_resault = calculate_avg_flow_time(Previous_tasks);
 		double Current_resault = calculate_avg_flow_time(Finished_tasks);
 		double Bestest_resault = calculate_avg_flow_time(Bestest_tasks);
-		cout << Previous_resault << " " << Current_resault << " " << Bestest_resault << endl;
+		//cout << Previous_resault << " " << Current_resault << " " << Bestest_resault << endl;
 		if(Current_resault <= Previous_resault){
-			cout << "Tak ";
+			//cout << "Tak ";
 			Previous_tasks = Finished_tasks;
 			if(Current_resault < Bestest_resault){
-				cout << "Tak" << endl;
+				//cout << "Tak" << endl;
 				Bestest_tasks = Finished_tasks;
 			}
-			else cout << "Nie" << endl;
+			//else cout << "Nie" << endl;
 		}
 		else{
-			cout << "Nie ";
-			double prop = exp((Previous_resault - Current_resault)/8*T) * 10000; //miejsce na tuning
-			double temp = rand() & 10000;
+			//cout << "Nie " << exp((Bestest_resault - Current_resault)*50/(Bestest_resault*T)) << " ";
+			double prop = exp((Bestest_resault - Current_resault)*50/(Bestest_resault*T)) * 32768;
+			double temp = rand();
 			if(prop > temp){
-				T *= 0.9;
-				cout << "Tak" << endl;
+				T *= 0.7;
+				//cout << "Tak" << endl;
 				Previous_tasks = Finished_tasks;
 			}
-			else cout << "Nie" << endl;
+			//else cout << "Nie" << endl;
 		}
 	    stop = clock();
 	}
@@ -515,7 +519,7 @@ int main(int argv, char * argc []) {
 	        cout << "------------------------------------------------------\n";
 	        cout << "Calculated best flow: " << best_avg_flow_time << endl;
 	        cout << "Average flow: " << avg_flow_time << endl;
-	        cout << setprecision(4) << error_perc << "% away from lower bound with " << Pocz << endl;
+	        cout << setprecision(4) << error_perc << "% away from lower bound with " << kon << "seconds" << endl;
 	        cout << "Total program run time: " << (stop - start) / (double) CLOCKS_PER_SEC << endl;
 	        cout << "Duration remove:  " << duration_rm/ (double) CLOCKS_PER_SEC << endl;
 	        cout << "Duration get_procs: " << duration_get_available/ (double) CLOCKS_PER_SEC  << endl;
@@ -523,6 +527,7 @@ int main(int argv, char * argc []) {
 	        cout << "Duration set candidates: " << duration_set_candidates/ (double) CLOCKS_PER_SEC  << endl;
 	        cout << "Duration put tasks " << duration_pt_tasks/ (double) CLOCKS_PER_SEC  << endl;
 	        cout << "Duration move time " << duration_move/ (double) CLOCKS_PER_SEC  << endl;
+	        cout << "Duration refresh tasks " << duration_refresh/ (double) CLOCKS_PER_SEC  << endl;
     	}
     }
 
